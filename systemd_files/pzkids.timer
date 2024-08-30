@@ -1,0 +1,9 @@
+[Unit]
+Description=PZKids Timer
+
+[Timer]
+OnCalendar=Mon..Fri 16:10
+Persistent=true
+
+[Install]
+WantedBy=default.target

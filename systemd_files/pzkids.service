@@ -1,0 +1,7 @@
+[Service]
+Type=simple
+WorkingDirectory={code_path}/pzkids-crawler
+ExecStart={code_path}/pzkids-crawler/.venv/bin/python main.py
+
+[Install]
+WantedBy=default.target
