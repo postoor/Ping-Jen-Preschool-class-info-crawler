@@ -20,7 +20,6 @@ Crawl information from the communication system and store it in SQLite.
 
 ## Usage
 
-1. `git clone https://github.com/postoor/Ping-Jen-Preschool-class-info-crawler pzkids-crawler`
 1. After logging in, copy the cookie from the browser into `.env`, following the format in `env.example`.
 2. (Optional) Provide the webhook link for n8n.
 3. (Optional) Copy the system file to set up a timer.
