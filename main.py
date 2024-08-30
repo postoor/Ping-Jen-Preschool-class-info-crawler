@@ -10,6 +10,7 @@ load_dotenv()
 
 cookies = os.getenv('COOKIES')
 n8n_webhook = os.getenv('N8N_WEBHOOK')
+class_number = os.getenv('CLASS_NUMBER')
 
 if not cookies:
     raise ValueError('Cookie not found in environment variables')
@@ -32,8 +33,8 @@ cur.execute("CREATE TABLE IF NOT EXISTS contact_book(date, data, created_at);")
 
 
 # Photo
-# /photo/89
-photo_index_body = requests.get(f"{base_url}/classinfo/photo/89", headers=headers, cookies=cookie_dict)
+# /photo/{class_number}
+photo_index_body = requests.get(f"{base_url}/classinfo/photo/{class_number}", headers=headers, cookies=cookie_dict)
 
 if photo_index_body.status_code != 200:
     raise Exception("Failed to fetch photo index")
@@ -68,8 +69,8 @@ for figure in article_image_list.find_all('figure'):
     con.commit()
 
 # Contact Book
-# /contactbook/89
-contact_book_body = requests.get(f"{base_url}/classinfo/contactbook/89", headers=headers, cookies=cookie_dict)
+# /contactbook/{class_number}
+contact_book_body = requests.get(f"{base_url}/classinfo/contactbook/{class_number}", headers=headers, cookies=cookie_dict)
 soup = BeautifulSoup(contact_book_body.text, "html.parser")
 contact_info = soup.find('div', class_='contactbook').find('div')
 contact_info_list = []
