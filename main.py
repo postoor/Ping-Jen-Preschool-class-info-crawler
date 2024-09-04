@@ -8,12 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-cookies = os.getenv('COOKIES')
 n8n_webhook = os.getenv('N8N_WEBHOOK')
 class_number = os.getenv('CLASS_NUMBER')
-
-if not cookies:
-    raise ValueError('Cookie not found in environment variables')
 
 headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36',
          'Referer': 'https://pzkids.bnet.tw/'}
@@ -21,9 +17,15 @@ headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/53
 base_url = "https://pzkids.bnet.tw"
 cookie_dict = {}
 
-for cookie in cookies.split(';'):
-    name, value = cookie.split('=', 1)
-    cookie_dict[name] = value
+session = requests.session()
+
+# wapp/index/prochk
+login_payload = {"account": os.getenv('ACCOUNT'), "phone": os.getenv('PHONE')}
+login = session.post(f"{base_url}/wapp/index/prochk", headers=headers, data=login_payload)
+
+if login.status_code != 200:
+    raise Exception("Failed to login")
+
 
 con = sqlite3.connect("pzkids.db")
 cur = con.cursor()
@@ -34,7 +36,7 @@ cur.execute("CREATE TABLE IF NOT EXISTS contact_book(date, data, created_at);")
 
 # Photo
 # /photo/{class_number}
-photo_index_body = requests.get(f"{base_url}/classinfo/photo/{class_number}", headers=headers, cookies=cookie_dict)
+photo_index_body = session.get(f"{base_url}/classinfo/photo/{class_number}", headers=headers, cookies=cookie_dict)
 
 if photo_index_body.status_code != 200:
     raise Exception("Failed to fetch photo index")
@@ -55,14 +57,14 @@ for figure in article_image_list.find_all('figure'):
     photo_dir = f"./files/photo/{article_name}"
     os.makedirs(photo_dir, exist_ok=True)
 
-    article = requests.get(f"{base_url}/{article_link['href']}", headers=headers, cookies=cookie_dict)
+    article = session.get(f"{base_url}/{article_link['href']}", headers=headers, cookies=cookie_dict)
     photo_list = BeautifulSoup(article.text, "html.parser").find(id='container').find_all('img')
     for photo in photo_list:
         print(photo['src'])
         photo_type = photo['src'].split('.')[-1]
         photo_name = photo['alt']
         with open(f"{photo_dir}/{photo_name}.{photo_type}", 'wb') as fp:
-            response = requests.get(photo['src'], headers=headers, cookies=cookie_dict)
+            response = session.get(photo['src'], headers=headers, cookies=cookie_dict)
             fp.write(response.content)
         fp.close()
     cur.execute("INSERT INTO article(name, link, created_at) VALUES (?, ?, CURRENT_TIMESTAMP)", (article_name, article_link['href']))
@@ -70,7 +72,7 @@ for figure in article_image_list.find_all('figure'):
 
 # Contact Book
 # /contactbook/{class_number}
-contact_book_body = requests.get(f"{base_url}/classinfo/contactbook/{class_number}", headers=headers, cookies=cookie_dict)
+contact_book_body = session.get(f"{base_url}/classinfo/contactbook/{class_number}", headers=headers, cookies=cookie_dict)
 soup = BeautifulSoup(contact_book_body.text, "html.parser")
 contact_info = soup.find('div', class_='contactbook').find('div')
 contact_info_list = []
@@ -96,7 +98,7 @@ else:
                 file_link = file_link_element['href']
                 file_name = file_link.split('/')[-1]
                 with open(f"./files/contact_book/{date}/{file_name}", 'wb') as fp:
-                    response = requests.get(file_link, headers=headers, cookies=cookie_dict)
+                    response = session.get(f"{base_url}{file_link}", headers=headers, cookies=cookie_dict)
                     fp.write(response.content)
                 fp.close()
     contact_string = json.dumps(contact_info_list, ensure_ascii=False)
